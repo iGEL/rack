@@ -341,6 +341,23 @@ describe Rack::Utils do
   should "return status code for symbol" do
     Rack::Utils.status_code(:ok).should.equal 200
   end
+
+  should "check the given limits for cookies" do
+    headers = {"Set-Cookie" => ["k=v"] * 50}
+    should.not.raise(Exception) { Rack::Utils.set_cookie_header!(headers, "key", "value" * 819) }
+
+    headers = {}
+    should.not.raise(Exception) { Rack::Utils.set_cookie_header!(headers, "key", "value" * 818, 4095) }
+
+    headers = {}
+    should.raise(ArgumentError) { Rack::Utils.set_cookie_header!(headers, "key", "value" * 819, 4095) }
+
+    headers = {"Set-Cookie" => ["k=v"] * 49}
+    should.not.raise(Exception) { Rack::Utils.set_cookie_header!(headers, "key", "value", nil, 50) }
+
+    headers = {"Set-Cookie" => ["k=v"] * 50}
+    should.raise(ArgumentError) { Rack::Utils.set_cookie_header!(headers, "key", "value", nil, 50) }
+  end
 end
 
 describe Rack::Utils, "byte_range" do

@@ -218,7 +218,7 @@ module Rack
     end
     module_function :select_best_encoding
 
-    def set_cookie_header!(header, key, value)
+    def set_cookie_header!(header, key, value, max_bytes = nil, max_count = nil)
       case value
       when Hash
         domain  = "; domain="  + value[:domain] if value[:domain]
@@ -238,12 +238,17 @@ module Rack
 
       case header["Set-Cookie"]
       when nil, ''
-        header["Set-Cookie"] = cookie
+        header["Set-Cookie"] = [cookie]
       when String
-        header["Set-Cookie"] = [header["Set-Cookie"], cookie].join("\n")
+        header["Set-Cookie"] = [header["Set-Cookie"], cookie]
       when Array
-        header["Set-Cookie"] = (header["Set-Cookie"] + [cookie]).join("\n")
+        header["Set-Cookie"] = (header["Set-Cookie"] + [cookie])
       end
+
+      raise ArgumentError, "Max cookie count of #{max_count} exceeded" if max_count && header["Set-Cookie"].size > max_count
+      header["Set-Cookie"] = header["Set-Cookie"].join("\n")
+
+      raise ArgumentError, "Max cookie length of #{max_bytes} exceeded" if max_bytes && bytesize(header["Set-Cookie"]) > max_bytes
 
       nil
     end
